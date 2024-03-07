@@ -2,6 +2,9 @@ package main
 
 import (
 	"github.com/aws/aws-cdk-go/awscdk/v2"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awss3"
+	
+
 	// "github.com/aws/aws-cdk-go/awscdk/v2/awssqs"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
@@ -24,6 +27,22 @@ func NewBucketmanagementStack(scope constructs.Construct, id string, props *Buck
 	// queue := awssqs.NewQueue(stack, jsii.String("BucketmanagementQueue"), &awssqs.QueueProps{
 	// 	VisibilityTimeout: awscdk.Duration_Seconds(jsii.Number(300)),
 	// })
+	
+	var expireDuration float64 = 7
+
+	ruleToBucket := 		awss3.LifecycleRule{
+			Expiration: awscdk.Duration_Days(& expireDuration),
+		}
+
+	lifeCycleRuleBucket := [] *awss3.LifecycleRule {
+		&ruleToBucket,
+	}
+
+	// https://pkg.go.dev/github.com/aws/aws-cdk-go/awscdk/v2/awss3#NewBucket
+	awss3.NewBucket(stack, jsii.String("CustomerPIIBucket"), &awss3.BucketProps {
+		LifecycleRules: &lifeCycleRuleBucket,
+		Encryption: awss3.BucketEncryption_KMS,  // encrypting Data-at-Rest & Data-in-transit
+	})
 
 	return stack
 }
