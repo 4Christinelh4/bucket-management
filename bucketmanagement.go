@@ -30,17 +30,16 @@ func NewBucketmanagementStack(scope constructs.Construct, id string, props *Buck
 	
 	var expireDuration float64 = 7
 
-	ruleToBucket := 		awss3.LifecycleRule{
-			Expiration: awscdk.Duration_Days(& expireDuration),
-		}
 
 	lifeCycleRuleBucket := [] *awss3.LifecycleRule {
-		&ruleToBucket,
+		{
+			Expiration: awscdk.Duration_Days(& expireDuration),
+		},
 	}
 
 	// https://pkg.go.dev/github.com/aws/aws-cdk-go/awscdk/v2/awss3#NewBucket
 	awss3.NewBucket(stack, jsii.String("CustomerPIIBucket"), &awss3.BucketProps {
-		LifecycleRules: &lifeCycleRuleBucket,
+		LifecycleRules: &lifeCycleRuleBucket, // only keep the data for 7 days
 		Encryption: awss3.BucketEncryption_KMS,  // encrypting Data-at-Rest & Data-in-transit
 	})
 
