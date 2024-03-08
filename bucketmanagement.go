@@ -35,12 +35,6 @@ func NewBucketmanagementStack(scope constructs.Construct, id string, props *Buck
 		AssumedBy: awsiam.NewArnPrincipal(jsii.String("arn:aws:iam::654654234409:root")),
 	})
 
-
-	// The code that defines your stack goes here
-	// policyStatements := []awsiam.PolicyStatement{
-
-	// }
-
 	// attach policies to USERS
 	// should actually use json which is more convinent
 	cloudEngineer.AttachInlinePolicy(awsiam.NewPolicy(stack, jsii.String("PolicyCreateBucket"), &awsiam.PolicyProps{
@@ -50,7 +44,11 @@ func NewBucketmanagementStack(scope constructs.Construct, id string, props *Buck
 					Actions: &([]*string{
 						jsii.String("s3:CreateBucket"),
 						jsii.String("s3:PutLifecycleConfiguration"),
+						jsii.String("s3:GetLifecycleConfiguration"),
 						jsii.String("s3:PutReplicationConfiguration"),
+						jsii.String("s3:GetReplicationConfiguration"),
+						jsii.String("s3:GetEncryptionConfiguration"),
+						jsii.String("s3:PutEncryptionConfiguration"),
 					}),
 					Resources: &([]*string{jsii.String("arn:aws:s3:::*")}),
 					Effect:    awsiam.Effect_ALLOW},
@@ -62,7 +60,7 @@ func NewBucketmanagementStack(scope constructs.Construct, id string, props *Buck
 		Statements: &([]awsiam.PolicyStatement{
 			awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{ // for data analytics
 				Actions: &([]*string{
-					jsii.String("s3:GetObject"),
+					jsii.String("s3:GetObject"), jsii.String("s3:List*"),
 				}), Resources: &([]*string{jsii.String("arn:aws:s3:::*")}), Effect: awsiam.Effect_ALLOW}),
 		}),
 	}))
