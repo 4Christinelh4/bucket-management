@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/aws/aws-cdk-go/awscdk/v2"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsiam"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3"
-	
 
 	// "github.com/aws/aws-cdk-go/awscdk/v2/awssqs"
 	"github.com/aws/constructs-go/constructs/v10"
@@ -14,33 +14,79 @@ type BucketmanagementStackProps struct {
 	awscdk.StackProps
 }
 
+
 func NewBucketmanagementStack(scope constructs.Construct, id string, props *BucketmanagementStackProps) awscdk.Stack {
 	var sprops awscdk.StackProps
 	if props != nil {
 		sprops = props.StackProps
 	}
+
 	stack := awscdk.NewStack(scope, &id, &sprops)
 
+	cloudEngineer := awsiam.NewRole(stack, jsii.String("CloudEngineerRole"), &awsiam.RoleProps{
+		AssumedBy: awsiam.NewArnPrincipal(jsii.String("arn:aws:iam::654654234409:root")),
+	})
+
+	dataEngineer := awsiam.NewRole(stack, jsii.String("DataEngineerRole"), &awsiam.RoleProps{
+		AssumedBy: awsiam.NewArnPrincipal(jsii.String("arn:aws:iam::654654234409:root")),
+	})
+
+	securityEngineer := awsiam.NewRole(stack, jsii.String("SecurityEngineerRole"), &awsiam.RoleProps{
+		AssumedBy: awsiam.NewArnPrincipal(jsii.String("arn:aws:iam::654654234409:root")),
+	})
+
+
 	// The code that defines your stack goes here
+	// policyStatements := []awsiam.PolicyStatement{
 
-	// example resource
-	// queue := awssqs.NewQueue(stack, jsii.String("BucketmanagementQueue"), &awssqs.QueueProps{
-	// 	VisibilityTimeout: awscdk.Duration_Seconds(jsii.Number(300)),
-	// })
-	
+	// }
+
+	// attach policies to USERS
+	// should actually use json which is more convinent
+	cloudEngineer.AttachInlinePolicy(awsiam.NewPolicy(stack, jsii.String("PolicyCreateBucket"), &awsiam.PolicyProps{
+		Statements: &([]awsiam.PolicyStatement{
+			awsiam.NewPolicyStatement(
+				&awsiam.PolicyStatementProps{
+					Actions: &([]*string{
+						jsii.String("s3:CreateBucket"),
+						jsii.String("s3:PutLifecycleConfiguration"),
+						jsii.String("s3:PutReplicationConfiguration"),
+					}),
+					Resources: &([]*string{jsii.String("arn:aws:s3:::*")}),
+					Effect:    awsiam.Effect_ALLOW},
+			),
+		}),
+	}))
+
+	dataEngineer.AttachInlinePolicy(awsiam.NewPolicy(stack, jsii.String("PolicyReadData"), &awsiam.PolicyProps{
+		Statements: &([]awsiam.PolicyStatement{
+			awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{ // for data analytics
+				Actions: &([]*string{
+					jsii.String("s3:GetObject"),
+				}), Resources: &([]*string{jsii.String("arn:aws:s3:::*")}), Effect: awsiam.Effect_ALLOW}),
+		}),
+	}))
+
+	securityEngineer.AttachInlinePolicy(
+		awsiam.NewPolicy(stack, jsii.String("PolicyChangeKey"), &awsiam.PolicyProps{
+			Statements: &([]awsiam.PolicyStatement{
+				awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{ // for security engineer
+					Actions: &([]*string{
+						jsii.String("s3:PutEncryptionConfiguration"),
+					}), Resources: &([]*string{jsii.String("arn:aws:s3:::*")}), Effect: awsiam.Effect_ALLOW}),
+			}),
+		}))
+
 	var expireDuration float64 = 7
-
-
-	lifeCycleRuleBucket := [] *awss3.LifecycleRule {
+	lifeCycleRuleBucket := []*awss3.LifecycleRule{
 		{
-			Expiration: awscdk.Duration_Days(& expireDuration),
+			Expiration: awscdk.Duration_Days(&expireDuration),
 		},
 	}
-
 	// https://pkg.go.dev/github.com/aws/aws-cdk-go/awscdk/v2/awss3#NewBucket
-	awss3.NewBucket(stack, jsii.String("CustomerPIIBucket"), &awss3.BucketProps {
-		LifecycleRules: &lifeCycleRuleBucket, // only keep the data for 7 days
-		Encryption: awss3.BucketEncryption_KMS,  // encrypting Data-at-Rest & Data-in-transit
+	awss3.NewBucket(stack, jsii.String("CustomerPIIBucket"), &awss3.BucketProps{
+		LifecycleRules: &lifeCycleRuleBucket,       // only keep the data for 7 days
+		Encryption:     awss3.BucketEncryption_KMS, // encrypting Data-at-Rest & Data-in-transit
 	})
 
 	return stack
@@ -85,4 +131,5 @@ func env() *awscdk.Environment {
 	//  Account: jsii.String(os.Getenv("CDK_DEFAULT_ACCOUNT")),
 	//  Region:  jsii.String(os.Getenv("CDK_DEFAULT_REGION")),
 	// }
+
 }
